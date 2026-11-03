@@ -2,6 +2,13 @@
 
 All notable changes to Bills Tracker. Newest first. Each entry matches a GitHub Release.
 
+## v1.0.2 - 2026-11-03
+iPhone layout fix, round 2
+- Bottom tab bar is now part of the page layout instead of floating, so no gap under it on iOS 26.
+- Page background matches the tab bar, so any leftover edge is invisible.
+- App always fetches the newest files (no stale cached copy).
+- "Build v1.0.2" label added at the bottom of Setup so you can tell which version is running.
+
 ## v1.0.1 - 2026-11-03
 iPhone layout fix (web app)
 - Header no longer draws under the status bar/notch.

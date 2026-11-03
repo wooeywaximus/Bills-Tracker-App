@@ -15,8 +15,8 @@
 <style>
 :root{--navy:#1F3A4D;--teal:#2A7F8E;--bg:#F3F6F8;--card:#fff;--ink:#17262F;--mute:#6B7C86;--line:#E1E7EB;--green:#2E8B57;--greenbg:#DDF2E4;--red:#C0392B;--redbg:#FBDCD8;--amber:#B9770E;--amberbg:#FFEBC2;--blue:#2F6FB5;--bluebg:#DCEBFA}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:16px/1.35 system-ui,-apple-system,Roboto,Arial,sans-serif}
-#app{display:flex;flex-direction:column;position:fixed;top:0;left:0;right:0;bottom:0;overflow:hidden}
+html,body{margin:0;height:100%;background:#fff;color:var(--ink);font:16px/1.35 system-ui,-apple-system,Roboto,Arial,sans-serif}
+#app{display:flex;flex-direction:column;position:fixed;top:0;left:0;right:0;bottom:0;overflow:hidden;background:var(--bg)}
 header{background:var(--navy);color:#fff;padding:calc(10px + env(safe-area-inset-top)) 14px 12px;flex:none}
 header h1{margin:0;font-size:18px;font-weight:700}
 .msel{display:flex;align-items:center;justify-content:space-between;margin-top:6px}
@@ -24,7 +24,7 @@ header h1{margin:0;font-size:18px;font-weight:700}
 .msel .mt{font-size:20px;font-weight:700;text-align:center;flex:1}
 .msel .mt small{display:block;font-size:12px;font-weight:400;opacity:.8}
 main{flex:1;overflow-y:auto;padding:12px 12px calc(96px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
-nav{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:5}
+nav{flex:none;background:#fff;border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:5}
 nav a{flex:1;text-align:center;padding:8px 0 7px;color:var(--mute);text-decoration:none;font-size:11px}
 nav a b{display:block;font-size:20px;line-height:1.1}
 nav a.on{color:var(--teal);font-weight:700}
@@ -360,7 +360,7 @@ function vSettings(){
    <button class="btn sec" data-act="copybackup">Copy backup to clipboard</button>
    <label>Restore: paste a backup here</label><textarea id="s_import" placeholder="Paste backup text"></textarea>
    <button class="btn sec" data-act="restore">Restore from pasted backup</button></div>
-   <h2>Danger zone</h2><div class="card"><button class="btn danger" data-act="reset">Erase all data &amp; start over</button></div>
+   <div class="note" style="text-align:center;margin:14px 0 4px">Build v1.0.2</div><h2>Danger zone</h2><div class="card"><button class="btn danger" data-act="reset">Erase all data &amp; start over</button></div>
    <div class="note" style="text-align:center;margin-top:16px">Bills Tracker · works offline · data stays on this phone</div>`;
 }
 
