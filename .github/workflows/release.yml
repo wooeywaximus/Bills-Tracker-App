@@ -1,0 +1,27 @@
+name: Auto release from CHANGELOG
+on:
+  push:
+    branches: [main]
+    paths: [CHANGELOG.md]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create release for newest changelog entry
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Newest entry = first "## vX.Y.Z - date" heading
+          HEADING=$(grep -m1 '^## v' CHANGELOG.md)
+          VER=$(echo "$HEADING" | sed -E 's/^## (v[0-9]+\.[0-9]+\.[0-9]+).*/\1/')
+          TITLE=$(echo "$HEADING" | sed -E 's/^## //')
+          awk -v h="$HEADING" '$0==h{f=1;next} /^## v/{if(f)exit} f' CHANGELOG.md > notes.md
+          if gh release view "$VER" >/dev/null 2>&1; then
+            echo "Release $VER already exists - nothing to do."
+          else
+            gh release create "$VER" --target "$GITHUB_SHA" --title "$TITLE" --notes-file notes.md
+          fi
