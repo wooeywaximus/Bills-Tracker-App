@@ -2,6 +2,12 @@
 
 All notable changes to Bills Tracker. Newest first. Each entry matches a GitHub Release.
 
+## v1.0.3 - 2026-11-03
+iPhone layout fix, round 3
+- Header now clears the status bar (confirmed on device in v1.0.2).
+- When opened from the Home Screen, the app is sized to the full screen height to remove the extra space under the tab bar.
+- Setup now shows "Build v1.0.3 · view H/S" (visible height / screen height) to help diagnose sizing.
+
 ## v1.0.2 - 2026-11-03
 iPhone layout fix, round 2
 - Bottom tab bar is now part of the page layout instead of floating, so no gap under it on iOS 26.

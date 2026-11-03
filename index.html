@@ -360,7 +360,7 @@ function vSettings(){
    <button class="btn sec" data-act="copybackup">Copy backup to clipboard</button>
    <label>Restore: paste a backup here</label><textarea id="s_import" placeholder="Paste backup text"></textarea>
    <button class="btn sec" data-act="restore">Restore from pasted backup</button></div>
-   <div class="note" style="text-align:center;margin:14px 0 4px">Build v1.0.2</div><h2>Danger zone</h2><div class="card"><button class="btn danger" data-act="reset">Erase all data &amp; start over</button></div>
+   <div class="note" style="text-align:center;margin:14px 0 4px">Build v1.0.3 · view ${innerHeight}/${screen.height}</div><h2>Danger zone</h2><div class="card"><button class="btn danger" data-act="reset">Erase all data &amp; start over</button></div>
    <div class="note" style="text-align:center;margin-top:16px">Bills Tracker · works offline · data stays on this phone</div>`;
 }
 
@@ -536,6 +536,15 @@ function doRestore(){
 /* ================= boot ================= */
 window.addEventListener("hashchange",()=>{if(!route[1]){}render()});
 $("#mprev").onclick=()=>shift(-1);$("#mnext").onclick=()=>shift(1);
+function fitApp(){
+  const a=document.getElementById("app");
+  if(window.navigator.standalone){
+    const portrait=(window.orientation===0||window.orientation===180||innerHeight>=innerWidth);
+    const h=portrait?Math.max(screen.height,innerHeight):Math.max(screen.width,innerHeight);
+    a.style.bottom="auto";a.style.height=h+"px";
+  }
+}
+fitApp();window.addEventListener("resize",fitApp);window.addEventListener("orientationchange",fitApp);
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js").catch(()=>{});
 load();
 (function(){
