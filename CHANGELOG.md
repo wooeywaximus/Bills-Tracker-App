@@ -10,6 +10,7 @@ Pay schedule option: once or twice a month
 - Month view shows each payout's money in, bills and what is left, and groups bills under each payout.
 - Per-payout overrides for any month in the Savings tab.
 - Existing once-a-month data keeps working unchanged.
+- Android APK now lives in the repo (`android/BillsTracker.apk`) and is attached to each release automatically.
 
 ## v1.0.3 - 2026-11-03
 iPhone layout fix, round 3

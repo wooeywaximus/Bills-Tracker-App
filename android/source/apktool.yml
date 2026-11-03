@@ -1,0 +1,22 @@
+!!brut.androlib.meta.MetaInfo
+apkFileName: bills.apk
+compressionType: false
+doNotCompress:
+- png
+isFrameworkApk: false
+packageInfo:
+  forcedPackageId: '127'
+sdkInfo:
+  minSdkVersion: '24'
+  targetSdkVersion: '28'
+sharedLibrary: false
+sparseResources: false
+unknownFiles: {}
+usesFramework:
+  ids:
+  - 1
+  tag: null
+version: 2.4.1
+versionInfo:
+  versionCode: 2
+  versionName: 1.1.0

@@ -2,7 +2,7 @@ name: Auto release from CHANGELOG
 on:
   push:
     branches: [main]
-    paths: [CHANGELOG.md]
+    paths: [CHANGELOG.md, android/BillsTracker.apk]
   workflow_dispatch:
 permissions:
   contents: write
@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Create release for newest changelog entry
+      - name: Create release for newest changelog entry and attach the Android APK
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -20,8 +20,9 @@ jobs:
           VER=$(echo "$HEADING" | sed -E 's/^## (v[0-9]+\.[0-9]+\.[0-9]+).*/\1/')
           TITLE=$(echo "$HEADING" | sed -E 's/^## //')
           awk -v h="$HEADING" '$0==h{f=1;next} /^## v/{if(f)exit} f' CHANGELOG.md > notes.md
-          if gh release view "$VER" >/dev/null 2>&1; then
-            echo "Release $VER already exists - nothing to do."
-          else
+          if ! gh release view "$VER" >/dev/null 2>&1; then
             gh release create "$VER" --target "$GITHUB_SHA" --title "$TITLE" --notes-file notes.md
+          fi
+          if [ -f android/BillsTracker.apk ]; then
+            gh release upload "$VER" android/BillsTracker.apk --clobber
           fi
