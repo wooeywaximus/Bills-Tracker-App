@@ -2,6 +2,15 @@
 
 All notable changes to Bills Tracker. Newest first. Each entry matches a GitHub Release.
 
+## v1.1.0 - 2026-11-03
+Pay schedule option: once or twice a month
+- New Setup option "How often are you paid?": once a month, or twice a month (15th and month-end).
+- Twice a month: set the month-end payout, the 15th payout and a split day (default 15).
+- Bills due on or before the split day are paid from the month-end payout (received the month before); later bills from the 15th payout.
+- Month view shows each payout's money in, bills and what is left, and groups bills under each payout.
+- Per-payout overrides for any month in the Savings tab.
+- Existing once-a-month data keeps working unchanged.
+
 ## v1.0.3 - 2026-11-03
 iPhone layout fix, round 3
 - Header now clears the status bar (confirmed on device in v1.0.2).

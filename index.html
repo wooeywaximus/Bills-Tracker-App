@@ -111,7 +111,7 @@ function seed(){
   const d=new Date();const fm=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
   return{
     v:1,
-    settings:{firstMonth:fm,months:14,standardPayout:0,firstPayout:null,goalPct:20,savingsStart:0,padding:10,dueSoon:7,target:0,balance:0,cats:DEFAULT_CATS.slice(),lastBackup:0},
+    settings:{firstMonth:fm,months:14,standardPayout:0,firstPayout:null,payFreq:1,payoutEnd:0,payoutMid:0,splitDay:15,goalPct:20,savingsStart:0,padding:10,dueSoon:7,target:0,balance:0,cats:DEFAULT_CATS.slice(),lastBackup:0},
     bills:[],payments:{},moved:{},payoutOv:{},ui:{month:""}
   };
 }
@@ -155,6 +155,10 @@ function inRange(b,m){
   if(b.end&&b.end<m)return false;
   return true;
 }
+const freq=()=>S.settings.payFreq===2?2:1;
+const splitDay=()=>Math.min(28,Math.max(1,parseInt(S.settings.splitDay,10)||15));
+const ord=n=>n+((n%100>=11&&n%100<=13)?"th":({1:"st",2:"nd",3:"rd"}[n%10]||"th"));
+const hlabel=(h,sd)=>h===0?"1st-"+ord(sd):ord(sd+1)+"-end";
 function rowsFor(m){
   const t=todayStr(),soon=S.settings.dueSoon;
   const out=[];
@@ -183,8 +187,16 @@ function monthData(m){
   let payout=S.payoutOv[m];
   if(!hasNum(payout))payout=(i===0&&hasNum(S.settings.firstPayout))?+S.settings.firstPayout:+S.settings.standardPayout||0;
   payout=+payout;
+  let halves=null;const sd=splitDay();
+  if(freq()===2){
+    let pa=S.payoutOv[m+":1"];if(!hasNum(pa))pa=(i===0&&hasNum(S.settings.firstPayout))?+S.settings.firstPayout:+S.settings.payoutEnd||0;
+    let pb=S.payoutOv[m+":2"];if(!hasNum(pb))pb=+S.settings.payoutMid||0;
+    pa=+pa;pb=+pb;payout=pa+pb;
+    const mk=(rs,po)=>{const b=rs.reduce((x,r)=>x+r.used,0),p=rs.filter(r=>r.paid).reduce((x,r)=>x+r.used,0);return{payout:po,bills:b,paid:p,still:b-p,left:po-b,count:rs.length}};
+    halves=[mk(rows.filter(r=>+r.due.slice(8)<=sd),pa),mk(rows.filter(r=>+r.due.slice(8)>sd),pb)];
+  }
   const left=payout-bills,goal=Math.round(payout*S.settings.goalPct/100);
-  return{m,i,rows,bills,paid,still:bills-paid,payout,left,goal,free:left-goal,moved:hasNum(S.moved[m])?+S.moved[m]:null};
+  return{m,i,rows,bills,paid,still:bills-paid,payout,left,goal,free:left-goal,halves,sd,moved:hasNum(S.moved[m])?+S.moved[m]:null};
 }
 function series(){
   let bal=+S.settings.balance||0,sv=+S.settings.savingsStart||0,sg=+S.settings.savingsStart||0;
@@ -226,7 +238,7 @@ function vMonth(){
   const overdueAll=ALLROWS().filter(r=>r.status==="overdue");
   const miss=rows.filter(r=>!r.paid&&r.budget===0&&!r.hasActual).length;
   let h="";
-  if(!S.bills.length)h+=`<div class="card" style="margin-bottom:12px"><div class="nm" style="font-weight:700;font-size:18px">Welcome 👋</div><div class="note" style="font-size:14px;color:var(--ink)">Get set up in 3 steps:<br>1. <a href="#/settings"><b>Setup</b></a>: set your first bill month, your monthly payout, savings goal % and account balance.<br>2. <a href="#/bills"><b>Bills</b></a>: add each bill once (type, due day, amount).<br>3. Come back here each month to tick bills off and enter actual amounts.</div></div>`;
+  if(!S.bills.length)h+=`<div class="card" style="margin-bottom:12px"><div class="nm" style="font-weight:700;font-size:18px">Welcome 👋</div><div class="note" style="font-size:14px;color:var(--ink)">Get set up in 3 steps:<br>1. <a href="#/settings"><b>Setup</b></a>: set your first bill month, how often you are paid (once or twice a month), your payout amount(s), savings goal % and account balance.<br>2. <a href="#/bills"><b>Bills</b></a>: add each bill once (type, due day, amount).<br>3. Come back here each month to tick bills off and enter actual amounts.</div></div>`;
   if(S.settings.balance===0&&S.bills.length&&!S.ui.hideBalNote)h+=`<div class="banner">Tip: enter your current account balance in <b>Setup</b> so the running balance is right. <a href="#/settings" style="color:inherit">Open Setup</a></div>`;
   if(backupDue())h+=`<div class="banner">It's been a while since your last backup. <a href="#/settings" style="color:inherit"><b>Back up now</b></a></div>`;
   if(overdueAll.length)h+=`<div class="banner red"><b>${overdueAll.length} overdue</b> bill${overdueAll.length>1?"s":""} (${peso(overdueAll.reduce((s,r)=>s+r.used,0))}) - see the red rows${overdueAll.some(r=>r.m!==curMonth)?" (some in other months)":""}.</div>`;
@@ -241,10 +253,13 @@ function vMonth(){
     <div class="card wide ${d.close<0?"neg":""}"><div class="l">Account balance after this month</div><div class="v">${peso(d.close)}</div>
       <div class="bar"><i style="width:${cnt?Math.round(pc/cnt*100):0}%"></i></div><div class="sub" style="font-size:12px;color:var(--mute);margin-top:4px">${pc} of ${cnt} bills paid</div></div>
   </div>
+  ${d.halves?`<h2>Your two payouts</h2><div class="grid">${d.halves.map((x,k)=>`<div class="card ${x.left<0?"neg":"pos"}"><div class="l">${hlabel(k,d.sd)} · ${k===0?"month-end":"15th"} payout</div><div class="v">${peso(x.left)}</div><div class="sub" style="font-size:12px;color:var(--mute);margin-top:2px">${peso(x.payout)} in · ${peso(x.bills)} bills (${x.count})</div><div class="sub" style="font-size:12px;color:var(--mute)">${peso(x.still)} still to pay</div></div>`).join("")}</div>`:""}
   <div class="chips">${[["all","All"],["unpaid","Unpaid"],["paid","Paid"]].map(([k,l])=>`<button class="chip ${filter===k?"on":""}" data-act="filter" data-v="${k}">${l}</button>`).join("")}</div>`;
   const shown=rows.filter(r=>filter==="all"||(filter==="paid"?r.paid:!r.paid));
   if(!shown.length)h+=`<div class="note" style="text-align:center;padding:24px 0">${cnt?"Nothing here.":"No bills for this month. Add bills in the Bills tab."}</div>`;
+  let lastHalf=-1;
   for(const r of shown){
+    if(d.halves){const hf=+r.due.slice(8)<=d.sd?0:1;if(hf!==lastHalf){lastHalf=hf;h+=`<h2>${hlabel(hf,d.sd)} · paid from the ${hf===0?"month-end":"15th"} payout</h2>`}}
     const est=r.b.type==="Variable"&&!r.hasActual&&!r.paid;
     h+=`<div class="row ${r.status}" data-act="pay" data-k="${esc(pk(r.b,r.m))}">
       <button class="ck" data-act="tick" data-k="${esc(pk(r.b,r.m))}" aria-label="Mark paid">${r.paid?"✓":""}</button>
@@ -292,8 +307,11 @@ function vSavings(){
    <label>Moved to savings this month</label>
    <input type="number" inputmode="decimal" id="moved" value="${d.moved==null?"":d.moved}" placeholder="0">
    <div class="note">${d.moved==null?"Enter what you actually moved after paying everything.":(d.moved>=d.goal?"On or above goal by "+peso(d.moved-d.goal):"Below goal by "+peso(d.goal-d.moved))+" · unaccounted: "+peso(d.left-d.moved)}</div>
-   <label>Payout override for this month (optional)</label>
-   <input type="number" inputmode="decimal" id="pov" value="${hasNum(S.payoutOv[d.m])?S.payoutOv[d.m]:""}" placeholder="${peso(d.payout)}">
+   ${d.halves?`<label>Month-end payout override for this month (optional)</label>
+   <input type="number" inputmode="decimal" id="pov1" value="${hasNum(S.payoutOv[d.m+":1"])?S.payoutOv[d.m+":1"]:""}" placeholder="${peso(d.halves[0].payout)}">
+   <label>15th payout override for this month (optional)</label>
+   <input type="number" inputmode="decimal" id="pov2" value="${hasNum(S.payoutOv[d.m+":2"])?S.payoutOv[d.m+":2"]:""}" placeholder="${peso(d.halves[1].payout)}">`:`<label>Payout override for this month (optional)</label>
+   <input type="number" inputmode="decimal" id="pov" value="${hasNum(S.payoutOv[d.m])?S.payoutOv[d.m]:""}" placeholder="${peso(d.payout)}">`}
    <button class="btn" data-act="savemonth">Save</button>
   </div>
   <h2>All months</h2>`;
@@ -343,8 +361,10 @@ function vSettings(){
   const f=(id,label,val,extra="")=>`<label>${label}</label><input id="${id}" type="number" inputmode="decimal" value="${val==null?"":val}" ${extra}>`;
   return `<div class="card">
    <label>First bill month</label><select id="s_first">${(()=>{const o=[];const d=new Date();const have=new Set();for(let i=-6;i<=24;i++){const x=new Date(d.getFullYear(),d.getMonth()+i,1);const k=x.getFullYear()+"-"+pad(x.getMonth()+1);have.add(k);o.push(`<option value="${k}" ${k===s.firstMonth?"selected":""}>${esc(mlabel(k))}</option>`)}if(!have.has(s.firstMonth))o.unshift(`<option value="${s.firstMonth}" selected>${esc(mlabel(s.firstMonth))}</option>`);return o.join("")})()}</select>
-   ${f("s_std","Standard monthly payout (received at end of the previous month)",s.standardPayout)}
-   ${f("s_first_pay","Payout that funds the first month (optional)",s.firstPayout)}
+   <label>How often are you paid?</label><select id="s_freq" onchange="document.getElementById('pf1').style.display=this.value==='2'?'none':'';document.getElementById('pf2').style.display=this.value==='2'?'':'none'"><option value="1" ${freq()===1?"selected":""}>Once a month (end of month)</option><option value="2" ${freq()===2?"selected":""}>Twice a month (15th and end of month)</option></select>
+   <div id="pf1" style="${freq()===2?"display:none":""}">${f("s_std","Standard monthly payout (received at end of the previous month)",s.standardPayout)}</div>
+   <div id="pf2" style="${freq()===2?"":"display:none"}">${f("s_pend","Month-end payout (received end of the previous month, covers bills due 1st to the split day)",s.payoutEnd)}${f("s_pmid","15th payout (covers bills due after the split day to month-end)",s.payoutMid)}${f("s_split","Split day (bills due on or before this day use the month-end payout)",s.splitDay||15)}</div>
+   ${f("s_first_pay","Payout that funds the first month (optional; with two payouts, this replaces the first month-end payout)",s.firstPayout)}
    ${f("s_goal","Savings goal (% of payout)",s.goalPct)}
    ${f("s_sv","Savings you already had before the first month",s.savingsStart)}
    ${f("s_bal","Current account balance (before the first payout lands)",s.balance)}
@@ -360,7 +380,7 @@ function vSettings(){
    <button class="btn sec" data-act="copybackup">Copy backup to clipboard</button>
    <label>Restore: paste a backup here</label><textarea id="s_import" placeholder="Paste backup text"></textarea>
    <button class="btn sec" data-act="restore">Restore from pasted backup</button></div>
-   <div class="note" style="text-align:center;margin:14px 0 4px">Build v1.0.3 · view ${innerHeight}/${screen.height}</div><h2>Danger zone</h2><div class="card"><button class="btn danger" data-act="reset">Erase all data &amp; start over</button></div>
+   <div class="note" style="text-align:center;margin:14px 0 4px">Build v1.1.0 · view ${innerHeight}/${screen.height}</div><h2>Danger zone</h2><div class="card"><button class="btn danger" data-act="reset">Erase all data &amp; start over</button></div>
    <div class="note" style="text-align:center;margin-top:16px">Bills Tracker · works offline · data stays on this phone</div>`;
 }
 
@@ -449,9 +469,10 @@ document.addEventListener("click",e=>{
     case"pay":go("#/month/pay/"+encodeURIComponent(t.dataset.k));break;
     case"gomonth":setMonth(t.dataset.m);render();window.scrollTo(0,0);$("#main").scrollTop=0;break;
     case"savemonth":{
-      const mv=$("#moved").value,pv=$("#pov").value;
+      const mv=$("#moved").value;
       if(mv==="")delete S.moved[curMonth];else S.moved[curMonth]=+mv;
-      if(pv==="")delete S.payoutOv[curMonth];else S.payoutOv[curMonth]=+pv;
+      if(freq()===2){[1,2].forEach(k=>{const v=$("#pov"+k).value,key=curMonth+":"+k;if(v==="")delete S.payoutOv[key];else S.payoutOv[key]=+v})}
+      else{const pv=$("#pov").value;if(pv==="")delete S.payoutOv[curMonth];else S.payoutOv[curMonth]=+pv}
       save();render();toast("Saved");break}
     case"closesheet":window.__edit=null;window.__draft=null;close();break;
     case"swpaid":t.classList.toggle("on");break;
@@ -514,6 +535,7 @@ function oneOff(){
 }
 function saveSettings(){
   const s=S.settings,n=id=>$(id).value;
+  s.payFreq=+n("#s_freq")===2?2:1;s.payoutEnd=+n("#s_pend")||0;s.payoutMid=+n("#s_pmid")||0;s.splitDay=Math.min(28,Math.max(1,parseInt(n("#s_split"),10)||15));
   s.firstMonth=n("#s_first");s.standardPayout=+n("#s_std")||0;s.firstPayout=n("#s_first_pay")===""?null:+n("#s_first_pay");
   s.goalPct=+n("#s_goal")||0;s.savingsStart=+n("#s_sv")||0;s.balance=+n("#s_bal")||0;s.padding=+n("#s_pad")||0;s.dueSoon=+n("#s_soon")||0;
   s.months=Math.min(36,Math.max(1,parseInt(n("#s_months"),10)||14));S.ui.hideBalNote=true;
